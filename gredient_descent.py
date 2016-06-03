@@ -16,6 +16,7 @@ def j_theta(X, Y, training_set):
             for x_y in training_set:
                 s += (h((X[i][j], Y[i][j]), x_y[0]) - x_y[1])**2
             result[i][j] = s / (2*len(training_set))
+    print "result " , result
     return result
 
 
@@ -65,9 +66,9 @@ def stop(theta, new_theta):
     return False
 
 def produce_random_point(limit_size=100):
-    x = random.random()*10
+    x = random.random()
     # y = math.sin(x/10)*100 + random.random()*200
-    y = ture_h(x) + (random.random() - 0.5)*5
+    y = ture_h(x) + random.random()
     return [x,y]
 
 def h_plot_2d(theta, x):
@@ -142,7 +143,7 @@ if __name__ == "__main__":
         theta_batch = batch_GD_step(theta_batch, alpha_batch, dots)
         theta_batch_sqs[0].append(theta_batch[0])
         theta_batch_sqs[1].append(theta_batch[1])
-        theta_random = random_GD_step(theta_random, alpha_random, dots, i%2)
+        theta_random = random_GD_step(theta_random, alpha_random, dots, i%len(dots_x))
         theta_random_sqs[0].append(theta_random[0])
         theta_random_sqs[1].append(theta_random[1])
         print "batch theta", theta_batch, "random theta", theta_random
