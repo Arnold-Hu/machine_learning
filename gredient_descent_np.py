@@ -10,7 +10,6 @@ from mpl_toolkits import mplot3d
 
 
 def j_theta(X, Y, x, y):
-    print "y size ", y.size
     result = copy.deepcopy(X)
     for i in range(len(X)):
         for j in range(len(X[0])):
@@ -18,22 +17,18 @@ def j_theta(X, Y, x, y):
             for p in range(y.size):
                 s += (h(np.array([X[i][j], Y[i][j]]), x[:, p]) - y[:, p])[0]**2
             result[i][j] = s / (2 * y.size)
-    print "result", result
     return result
 
 
 def partial_j(theta, x, y, index):
-    print "theta", theta
     tmp = copy.copy(theta)
 
     tmp = h(tmp, x) - y
     result = tmp * x[index]
-    print "partial j result ", result
     return result
 
 
 def batch_GD_step(theta, alpha, x, y):
-    print "into theta", theta
     new_theta = copy.deepcopy(theta)
     # for index, ele in enumerate(theta):
     #     theta[index] = ele - alpha*partial_j(theta, x, y, index)
@@ -45,7 +40,7 @@ def batch_GD_step(theta, alpha, x, y):
             # s += tmp
         s = s / x.size
         new_theta[0, i] = theta[0, i] - alpha[i] * s
-        print " batch step length", s, "index", i, "new theta", new_theta
+
     return new_theta
 
 
@@ -53,9 +48,7 @@ def random_GD_step(theta, alpha, x, y, index):
     new_theta = copy.deepcopy(theta)
     for i in range(theta.size):
         tmp = partial_j(theta, x[:, index], y[:, index], i)[0]
-        print "random step length", tmp, "index", i, "sample", index
         new_theta[0, i] = theta[0, i] - alpha[i] * tmp
-    print "theta after batch", new_theta
     return new_theta
 
 
@@ -63,10 +56,14 @@ def h(theta, x):
     return np.dot(theta, np.transpose(x))
 
 
-# def stop(theta, new_theta):
-#     if sum(abs(i[0] - i[1]) for i in zip(theta, new_theta)):
-#         return True
-#     return False
+def stop(x, y, theta):
+    tmp = np.dot(theta, x) - y
+    result = np.sum(tmp ** 2)
+    return result
+
+
+
+
 
 # def produce_random_point(limit_size=100):
 #     x = random.random()*10
@@ -104,8 +101,9 @@ def random_color(k):
     return color
 
 if __name__ == "__main__":
-
-
+    min_error = 0.1
+    max_turns = 200
+    turns = 20
     x_line = np.linspace(-1, 1)
     theta_batch = np.zeros([1,2])
     theta_random = np.zeros([1,2])
@@ -118,7 +116,7 @@ if __name__ == "__main__":
     # for i in range(20):
     #     dots.append(produce_random_point())
 
-    length = 20
+    length = 5
     x_dots = produce_random_x(length)
 
     noise = np.random.rand(1, length)
@@ -132,8 +130,8 @@ if __name__ == "__main__":
     ax1.scatter(b_x_dots, b_y_dots, marker='x')
     ax2.scatter(b_x_dots, b_y_dots, marker='x')
 
-    x1 = np.arange(-0.3, 0.3, 0.03)
-    y1 = np.arange(-0.3, 0.6, 0.03)
+    x1 = np.arange(-0.5, 0.5, 0.05)
+    y1 = np.arange(-0.5, 1.5, 0.05)
     X, Y = np.meshgrid(x1, y1)
     Z = j_theta(X, Y, x_dots_ex, b_y_dots)
 
@@ -143,26 +141,67 @@ if __name__ == "__main__":
     CS = ax3.contour(X, Y, Z)
     ax3.clabel(CS, inline=1, fontsize=10)
 
-    alpha_batch = [0.5, 0.5]
-    alpha_random = [0.5, 0.5]
-    # theta_batch_sqs = [[],[]]
-    # theta_random_sqs = [[], []]
-    for i in range(20):
-        theta_batch = batch_GD_step(theta_batch, alpha_batch, x_dots_ex, b_y_dots)
-        # theta_batch_sqs[0].append(theta_batch[0])
-        # theta_batch_sqs[1].append(theta_batch[1])
-        theta_random = random_GD_step(theta_random, alpha_random, x_dots_ex, b_y_dots, i%b_y_dots.size)
-        # theta_random_sqs[0].append(theta_random[0])
-        # theta_random_sqs[1].append(theta_random[1])
-        print "batch theta", theta_batch, "random theta", theta_random
-        line, = ax1.plot(x_line, h_plot_2d(theta_batch, x_line), '--', linewidth=2+0.1*i, label=str(i+1) + "th line")
-        line, = ax2.plot(x_line, h_plot_2d(theta_random, x_line), '--', linewidth=2+0.1*i, label=str(i+1) + "th line")
-    # ax3.plot(theta_batch_sqs[0], theta_batch_sqs[1])
-    # for i,item in enumerate(zip(theta_batch_sqs[0], theta_batch_sqs[1])):
-    #     ax3.scatter(item[0], item[1], marker='x', s=10+5*i)
-    # ax3.plot(theta_random_sqs[0], theta_random_sqs[1])
-    # for i,item in enumerate(zip(theta_random_sqs[0], theta_random_sqs[1])):
-    #     ax3.scatter(item[0], item[1], marker='^', s=10+5*i)
+    alpha_batch = [0.2, 0.2]
+    alpha_random = [0.2, 0.2]
+
+    theta_batch_sqs = theta_batch
+    theta_random_sqs = theta_random
+    count_batch = 0
+    count_random = 0
+
+#下面是两个不同的情况下的收敛，看情况用，注意要注释掉一个
+
+
+#--------------------------这部分是完全靠终止条件-----------------------------
+    # while True:
+    #     tmp = batch_GD_step(theta_batch, alpha_batch, x_dots_ex, b_y_dots)
+    #     theta_batch_sqs = np.concatenate((theta_batch_sqs, tmp))
+    #     count_batch += 1
+    #     line, = ax1.plot(x_line, h_plot_2d(tmp, x_line), '--', linewidth=2+0.1*count_batch, label=str(count_batch+1) + "th line")
+    #     res = stop(x_dots_ex, b_y_dots, tmp)
+    #     print "batch GD turns %s, theta is %s, and error is %s" % (count_batch, tmp, res)
+    #     if res < min_error or count_batch>max_turns:
+    #         break
+    #     theta_batch = tmp
+
+    # while True:
+    #     tmp = random_GD_step(theta_random, alpha_random, x_dots_ex, b_y_dots, count_random%b_y_dots.size)
+    #     theta_random_sqs = np.concatenate((theta_random_sqs, tmp))
+    #     count_random += 1
+    #     line, = ax2.plot(x_line, h_plot_2d(tmp, x_line), '--', linewidth=2+0.1*count_random, label=str(count_random+1) + "th line")
+    #     res = stop(x_dots_ex, b_y_dots, tmp)
+    #     print "random GD turns %s, theta is %s, and error is %s" % (count_random, tmp, res)
+    #     if res < min_error or count_random>max_turns:
+    #         break
+    #     theta_random = tmp
+# ----------------------------------------------------------------
+
+# ----------------这部分是用来固定迭代次数的部分-------------------------
+    for i in range(turns):
+        tmp = batch_GD_step(theta_batch, alpha_batch, x_dots_ex, b_y_dots)
+        theta_batch_sqs = np.concatenate((theta_batch_sqs, tmp))
+        count_batch += 1
+        line, = ax1.plot(x_line, h_plot_2d(tmp, x_line), '--', linewidth=2+0.1*count_batch, label=str(count_batch+1) + "th line")
+        res = stop(x_dots_ex, b_y_dots, tmp)
+        print "batch GD turns %s, theta is %s, and error is %s" % (count_batch, tmp, res)
+        theta_batch = tmp
+
+        tmp = random_GD_step(theta_random, alpha_random, x_dots_ex, b_y_dots, count_random%b_y_dots.size)
+        theta_random_sqs = np.concatenate((theta_random_sqs, tmp))
+        count_random += 1
+        line, = ax2.plot(x_line, h_plot_2d(tmp, x_line), '--', linewidth=2+0.1*count_random, label=str(count_random+1) + "th line")
+        res = stop(x_dots_ex, b_y_dots, tmp)
+        print "random GD turns %s, theta is %s, and error is %s" % (count_random, tmp, res)
+        theta_random = tmp
+#--------------------------------------------------------------------
+
+    ax3.plot(theta_batch_sqs[:, 0], theta_batch_sqs[:, 1])
+    ax3.plot(theta_random_sqs[:, 0], theta_random_sqs[:, 1])
+
+    for i in range(count_batch):
+        ax3.scatter(theta_batch_sqs[i, 0], theta_batch_sqs[i, 1], marker='^', s=10+5*i)
+    for i in range(count_random):
+        ax3.scatter(theta_random_sqs[i, 0], theta_random_sqs[i, 1], marker='*', s=10+5*i)
     ax1.legend(loc='upper left')
     ax2.legend(loc='upper left')
     plt.show()
