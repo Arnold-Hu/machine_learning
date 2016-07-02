@@ -28,7 +28,7 @@ def partial_j(theta, x, y, index):
     return result
 
 
-def batch_GD_step(theta, alpha, x, y):
+def batch_GD_step(theta, alpha, x, y ):
     new_theta = copy.deepcopy(theta)
     # for index, ele in enumerate(theta):
     #     theta[index] = ele - alpha*partial_j(theta, x, y, index)
@@ -40,7 +40,6 @@ def batch_GD_step(theta, alpha, x, y):
             # s += tmp
         s = s / x.size
         new_theta[0, i] = theta[0, i] - alpha[i] * s
-
     return new_theta
 
 
@@ -116,7 +115,7 @@ if __name__ == "__main__":
     # for i in range(20):
     #     dots.append(produce_random_point())
 
-    length = 5
+    length = 20 
     x_dots = produce_random_x(length)
 
     noise = np.random.rand(1, length)
@@ -141,8 +140,8 @@ if __name__ == "__main__":
     CS = ax3.contour(X, Y, Z)
     ax3.clabel(CS, inline=1, fontsize=10)
 
-    alpha_batch = [0.2, 0.2]
-    alpha_random = [0.2, 0.2]
+    alpha_batch = [0.5, 0.5]
+    alpha_random = [0.5, 0.5]
 
     theta_batch_sqs = theta_batch
     theta_random_sqs = theta_random
@@ -202,7 +201,7 @@ if __name__ == "__main__":
         ax3.scatter(theta_batch_sqs[i, 0], theta_batch_sqs[i, 1], marker='^', s=10+5*i)
     for i in range(count_random):
         ax3.scatter(theta_random_sqs[i, 0], theta_random_sqs[i, 1], marker='*', s=10+5*i)
-    ax1.legend(loc='upper left')
-    ax2.legend(loc='upper left')
+    # ax1.legend(loc='upper left')
+    # ax2.legend(loc='upper left')
     plt.show()
 
